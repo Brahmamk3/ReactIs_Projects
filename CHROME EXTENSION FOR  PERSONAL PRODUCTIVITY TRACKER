@@ -1,0 +1,80 @@
+Project-Structure:
+/productivity-tracker
+│── /public
+│   ├── manifest.json
+│── /src
+│   ├── App.js
+│   ├── Popup.js
+│   ├── background.js
+│── package.json
+│── webpack.config.js
+│── .babelrc
+│── README.md
+
+1.Manifest File: define the extension settings and permissions.
+
+{
+  "manifest_version": 3,
+  "name": "Productivity Tracker",
+  "version": "1.0",
+  "description": "Track your browsing time and productivity.",
+  "permissions": ["storage", "tabs", "activeTab", "history"],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "action": {
+    "default_popup": "index.html",
+    "default_icon": "icon.png"
+  }
+}
+
+2.background.js:Tracks time spent on each website.
+
+let siteTimes = {};
+
+chrome.tabs.onActivated.addListener(activeInfo => {
+  chrome.tabs.get(activeInfo.tabId, tab => {
+    trackTime(tab.url);
+  });
+});
+
+function trackTime(url) {
+  const domain = new URL(url).hostname;
+  if (!siteTimes[domain]) {
+    siteTimes[domain] = 0;
+  }
+  
+  let startTime = Date.now();
+  
+  setInterval(() => {
+    siteTimes[domain] += 1;
+    chrome.storage.local.set({ siteTimes });
+  }, 1000);
+}
+3️. Popup.js:Displays tracked data and goals.
+
+import React, { useState, useEffect } from "react";
+
+export default function Popup() {
+  const [siteTimes, setSiteTimes] = useState({});
+  
+  useEffect(() => {
+    chrome.storage.local.get(["siteTimes"], (result) => {
+      if (result.siteTimes) {
+        setSiteTimes(result.siteTimes);
+      }
+    });
+  }, []);
+  
+  return (
+    <div>
+      <h2>Productivity Tracker</h2>
+      {Object.entries(siteTimes).map(([site, time]) => (
+        <p key={site}>{site}: {time} seconds</p>
+      ))}
+    </div>
+  );
+}
+
+
+4.Import them all in app.js 
