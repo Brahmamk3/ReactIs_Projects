@@ -1,0 +1,258 @@
+import React, { useState } from "react";
+import "./App.css";
+
+function App() {
+  const [query, setQuery] = useState(""); // User's search query
+  const [movie, setMovie] = useState(null); // Movie details object
+  const [loading, setLoading] = useState(false); // Loading state
+  const [error, setError] = useState(""); // Error message (if any)
+  const [favorites, setFavorites] = useState([]); // List of favorite movies
+
+  const apiKey = "TMDB_key"; // Replace with your TMDb API key
+
+  // Fetch movie details from TMDb API
+  const fetchMovieDetails = async () => {
+    if (!query) return;
+
+    setLoading(true);
+    setError(""); // Clear previous errors
+
+    try {
+      const response = await fetch(
+        `https://api.themoviedb.org/3/search/movie?api_key=${apiKey}&query=${encodeURIComponent(
+          query
+        )}&language=en-US&page=1&include_adult=false`
+      );
+      const data = await response.json();
+
+      if (data.results && data.results.length > 0) {
+        setMovie(data.results[0]); // Store the first movie from the search results
+      } else {
+        setMovie(null); // No movie found, clear movie data
+        setError("No movie found with that name. Try another movie title.");
+      }
+    } catch (error) {
+      setError("Failed to fetch movie. Please try again.");
+      setMovie(null);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Add to favorites
+  const addToFavorites = () => {
+    if (movie && !favorites.some((fav) => fav.id === movie.id)) {
+      setFavorites([...favorites, movie]);
+    }
+  };
+
+  // Remove from favorites
+  const removeFromFavorites = (id) => {
+    setFavorites(favorites.filter((fav) => fav.id !== id));
+  };
+
+  return (
+    <div className="App">
+      <h1>Movie Search App </h1>
+
+      {/* Search Input */}
+      <div className="search-container">
+        <input
+          type="text"
+          placeholder="Search for a movie..."
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+        />
+        <button onClick={fetchMovieDetails}>Search</button>
+      </div>
+
+      {/* Display Loading Spinner */}
+      {loading && <p className="loading">Loading...</p>}
+
+      {/* Display Error if any */}
+      {error && <p className="error">{error}</p>}
+
+      {/* Display Movie Details */}
+      {movie && !loading && !error && (
+        <div className="movie-details">
+          <img
+            src={`https://image.tmdb.org/t/p/w500${movie.poster_path}`}
+            alt={movie.title}
+            className="movie-poster"
+          />
+          <div className="movie-info">
+            <h2>{movie.title}</h2>
+            <p><strong>Release Date:</strong> {movie.release_date}</p>
+            <p><strong>Overview:</strong> {movie.overview}</p>
+            <p><strong>Rating:</strong> {movie.vote_average} / 10</p>
+            <button onClick={addToFavorites} className="fav-btn">❤️ Add to Favorites</button>
+          </div>
+        </div>
+      )}
+
+      {/* If no movie is found, display message */}
+      {!movie && !loading && query && !error && (
+        <p className="no-result">No movie found with that name. Try another movie title.</p>
+      )}
+
+      {/* Favorites Section */}
+      {favorites.length > 0 && (
+        <div className="favorites-section">
+          <h2>Favorite Movies ❤️</h2>
+          <ul>
+            {favorites.map((fav) => (
+              <li key={fav.id} className="favorite-item">
+                <img
+                  src={`https://image.tmdb.org/t/p/w200${fav.poster_path}`}
+                  alt={fav.title}
+                />
+                <div>
+                  <h3>{fav.title}</h3>
+                  <button onClick={() => removeFromFavorites(fav.id)} className="remove-btn">
+                    ❌ Remove
+                  </button>
+                </div>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+    </div>
+  );
+}
+
+export default App;
+
+
+Css Properties:-App.css
+/* General Styles */
+body {
+  font-family: Arial, sans-serif;
+  background-color: #f4f4f9;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+}
+
+.App {
+  width: 90%;
+  max-width: 1200px;
+  text-align: center;
+}
+
+h1 {
+  font-size: 2.5rem;
+  color: #333;
+  margin-bottom: 20px;
+}
+
+.search-container {
+  margin-bottom: 20px;
+}
+
+.search-container input {
+  padding: 10px;
+  font-size: 1rem;
+  width: 250px;
+  margin-right: 10px;
+  border: 2px solid #ccc;
+  border-radius: 5px;
+}
+
+.search-container button {
+  padding: 10px 20px;
+  font-size: 1rem;
+  background-color: #007BFF;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+.search-container button:hover {
+  background-color: #0056b3;
+}
+
+.loading {
+  font-size: 1.2rem;
+  color: #007BFF;
+}
+
+.error {
+  font-size: 1.2rem;
+  color: red;
+  margin-top: 20px;
+}
+
+.movie-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 20px;
+  margin-top: 20px;
+}
+
+.movie-item {
+  background-color: white;
+  border: 1px solid #ddd;
+  border-radius: 10px;
+  overflow: hidden;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  transition: transform 0.3s ease;
+}
+
+.movie-item:hover {
+  transform: scale(1.05);
+}
+
+.movie-poster {
+  width: 100%;
+  height: 300px;
+  object-fit: cover;
+}
+
+.movie-info {
+  padding: 10px;
+  text-align: left;
+}
+
+.movie-info h3 {
+  margin: 0;
+  font-size: 1.2rem;
+  color: #333;
+}
+
+.movie-info p {
+  margin: 5px 0;
+  color: #555;
+}
+
+button {
+  padding: 8px 15px;
+  background-color: #28a745;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+button:hover {
+  background-color: #218838;
+}
+
+.favorite-movies {
+  margin-top: 40px;
+  text-align: center;
+}
+
+.favorite-movies h2 {
+  font-size: 2rem;
+  color: #333;
+}
+
+.favorite-movies .movie-item {
+  margin-top: 20px;
+}
+
